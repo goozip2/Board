@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head th:replace="~{common/head}">
+
+</head>
+
+<body>
+
+  <div th:replace="~{common/header}">
+
+  </div>
+
+  <nav th:replace="~{common/nav}">
+
+  </nav>
+
+  <div class="container mt-5">
+    <div class="card">
+      <div class="card-body">
+        <span class="badge bg-primary rounded-pill" th:text="${board.id} + '번'"></span>
+        <h5 class="card-title" th:text="${board.title}"></h5>
+        <h6 class="card-subtitle mb-2 text-muted" th:text="${board.user.id}"></h6>
+        <p class="card-text" th:text="${board.content}"></p>
+      </div>
+    </div>
+  </div>
+  <div class="container mt-5">
+    <ul class="nav justify-content-end">
+      <li class="nav-item">
+        <a class="nav-link"
+           th:href="@{|/board/like?id=${board.id}|}"
+           th:text="${likeExists} ? '좋아요취소' : '좋아요'">
+        </a>
+    </li>
+      <li class="nav-item">
+        <a class="nav-link" th:href="@{|/board|}" id="list">목록</a>
+      </li>
+      <li class="nav-item">
+        <a th:if="${session.user_info != null && session.user_info.id == board.user.id}" class="nav-link"
+          th:href="@{|/board/update?bid=${board.id}|}" id="update">수정</a>
+      </li>
+      <li class="nav-item">
+        <a th:if="${session.user_info != null && session.user_info.id == board.user.id}" class="nav-link"
+          th:num="${board.id}" id="delete">삭제</a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 댓글 작성 폼 -->
+  <div class="container mt-4">
+    <div class="card">
+      <div class="card-body">
+        <h5>댓글 작성</h5>
+        <form th:action="@{|/board/comment/write?bid=${board.id}|}" method="post">
+          <input type="hidden" name="boardId" th:value="${board.id}" />
+          <div class="mb-3">
+            <label for="commentContent" class="form-label">내용</label>
+            <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary" th:if="${session.user_info != null}">댓글 등록</button>
+            <a class="btn btn-secondary" th:if="${session.user_info == null}" th:href="@{/signin}">로그인 후 댓글 작성</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 댓글 목록 출력 -->
+  <div class="container mt-4">
+    <div class="card">
+      <div class="card-body">
+        <h5>댓글 목록</h5>
+        <div th:if="${#lists.isEmpty(board.comments)}">
+          <p>등록된 댓글이 없습니다.</p>
+        </div>
+        <div th:each="comment : ${board.comments}">
+          <div class="border-bottom py-2 d-flex justify-content-between align-items-center">
+            <div>
+              <small class="text-muted" th:text="${comment.user.id}">작성자</small>
+              <p class="mb-1" th:text="${comment.content}">댓글 내용</p>
+            </div>
+            <!-- 삭제 버튼: 로그인 유저가 댓글 작성자인 경우에만 표시 -->
+            <form th:if="${session.user_info != null && session.user_info.id == comment.user.id}"
+              th:action="@{|/board/comment/delete/${comment.id}/${board.id}|}" method="get"
+              onsubmit="return confirm('정말 삭제하시겠습니까?');">
+              <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    document.querySelector('#delete').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (confirm('삭제하시겠습니까?')) {
+        const num = e.target.getAttribute('num');
+        location = `/board/delete/${num}`;
+      }
+    });
+  </script>
+
+  <div th:replace="~{common/footer}">
+  </div>
+
+</body>
+
+</html>
