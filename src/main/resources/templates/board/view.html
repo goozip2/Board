@@ -22,17 +22,16 @@
         <h5 class="card-title" th:text="${board.title}"></h5>
         <h6 class="card-subtitle mb-2 text-muted" th:text="${board.user.id}"></h6>
         <p class="card-text" th:text="${board.content}"></p>
+        <img th:if="${fileAtch != null}" th:src="@{/image/{file}(file=${fileAtch.cName})}" alt="첨부 이미지" width="200">
       </div>
     </div>
   </div>
   <div class="container mt-5">
     <ul class="nav justify-content-end">
       <li class="nav-item">
-        <a class="nav-link"
-           th:href="@{|/board/like?id=${board.id}|}"
-           th:text="${likeExists} ? '좋아요취소' : '좋아요'">
+        <a class="nav-link" th:href="@{|/board/like?id=${board.id}|}" th:text="${likeExists} ? '좋아요취소' : '좋아요'">
         </a>
-    </li>
+      </li>
       <li class="nav-item">
         <a class="nav-link" th:href="@{|/board|}" id="list">목록</a>
       </li>
