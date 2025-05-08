@@ -1,5 +1,6 @@
 package com.example.board.entity;
 
+import java.io.Serializable;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -12,7 +13,7 @@ import lombok.Data;
 
 @Entity
 @Data
-public class User {
+public class User implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -20,6 +21,6 @@ public class User {
 	private String pwd;
 	private String name;
 
-	@OneToMany (mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.REMOVE }, orphanRemoval = true)
+	@OneToMany(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.REMOVE }, orphanRemoval = true)
 	List<Board> boards;
 }
