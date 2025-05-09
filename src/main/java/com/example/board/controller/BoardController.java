@@ -1,31 +1,25 @@
 package com.example.board.controller;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.board.entity.Board;
@@ -103,27 +97,7 @@ public class BoardController {
 			model.addAttribute("likeExists", false);
 		}
 
-		FileAtch fileAtch = fileAtchRepository.findByBoard(board);
-		model.addAttribute("fileAtch", fileAtch);
-
 		return "board/view";
-	}
-
-	@GetMapping("/image/{fileName}")
-	@ResponseBody
-	public ResponseEntity<Resource> displayImage(@PathVariable String fileName) throws IOException {
-		File file = new File("c:/upload/board/" + fileName);
-
-		if (!file.exists()) {
-			return ResponseEntity.notFound().build();
-		}
-
-		String contentType = Files.probeContentType(file.toPath()); // ex: image/jpeg
-		Resource resource = new InputStreamResource(new FileInputStream(file));
-
-		return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType(contentType))
-				.body(resource);
 	}
 
 	@GetMapping("/board")
@@ -186,6 +160,11 @@ public class BoardController {
 		return "board/write";
 	}
 
+	// repository 2회 사용 -> 정상 롤백 위해 애너테이션 추가 DB 롤백
+	// default: Runtime 예외가 발생되면 DB 롤백 -> rollbackFor 옵션으로 롤백 대상 오류 지정
+	@Transactional(rollbackFor = {
+			IOException.class, RuntimeException.class, IllegalStateException.class
+	})
 	@PostMapping("/board/write")
 	public String boardWritePost(@ModelAttribute Board board, @RequestParam("file") MultipartFile file,
 			HttpSession session) throws IllegalStateException, IOException {
@@ -194,6 +173,7 @@ public class BoardController {
 		}
 		User user = (User) session.getAttribute("user_info");
 		board.setUser(user);
+		// JPA 영속성 open close
 		boardRepository.save(board);
 
 		FileAtch fileAtch = new FileAtch();
@@ -204,6 +184,7 @@ public class BoardController {
 		String ext = oName.substring(oName.lastIndexOf("."));
 		String cName = uuid + ext;
 		fileAtch.setCName(cName);
+		// JPA 영속성 open close
 		fileAtchRepository.save(fileAtch);
 
 		File dir = new File("c:/upload/board");
@@ -213,6 +194,8 @@ public class BoardController {
 
 		File sFile = new File("c:/upload/board/" + cName);
 		file.transferTo(sFile);
+
+		System.out.println(4 / 0);
 
 		return "redirect:/board";
 	}
@@ -253,13 +236,15 @@ public class BoardController {
 
 		User user = (User) session.getAttribute("user_info");
 		Like like = likeRepository.findByBoardAndUser(board, user);
-		if (like != null) {
-			likeRepository.delete(like);
-		} else {
-			like = new Like();
-			like.setBoard(board);
-			like.setUser(user);
-			likeRepository.save(like);
+		if (user != null) {
+			if (like != null) {
+				likeRepository.delete(like);
+			} else {
+				like = new Like();
+				like.setBoard(board);
+				like.setUser(user);
+				likeRepository.save(like);
+			}
 		}
 
 		return "redirect:/board/view?bid=" + id;
