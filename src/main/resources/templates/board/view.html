@@ -22,7 +22,7 @@
         <h5 class="card-title" th:text="${board.title}"></h5>
         <h6 class="card-subtitle mb-2 text-muted" th:text="${board.user.id}"></h6>
         <p class="card-text" th:text="${board.content}"></p>
-        <img th:if="${fileAtch != null}" th:src="@{/image/{file}(file=${fileAtch.cName})}" alt="첨부 이미지" width="200">
+        <img th:src="@{/download(boardId=${board.id})}" alt="첨부 이미지" width="250">
       </div>
     </div>
   </div>
